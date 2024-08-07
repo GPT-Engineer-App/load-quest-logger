@@ -3,8 +3,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Cat, Heart, Info, ChevronLeft, ChevronRight } from "lucide-react";
+import { Cat, Heart, Info, ChevronLeft, ChevronRight, Paw } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const catImages = [
   "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Cat03.jpg/1200px-Cat03.jpg",
@@ -26,6 +28,7 @@ const Index = () => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState(null);
+  const [isImageZoomed, setIsImageZoomed] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -61,28 +64,42 @@ const Index = () => {
           Purrfect Cat World
         </motion.h1>
         
-        <div className="relative mb-8">
+        <div className="relative mb-8 overflow-hidden rounded-lg shadow-lg">
           <AnimatePresence mode="wait">
             <motion.img 
               key={currentImageIndex}
               src={catImages[currentImageIndex]}
               alt={`Cute cat ${currentImageIndex + 1}`}
-              className="mx-auto object-cover w-full h-[400px] rounded-lg shadow-lg"
+              className={`mx-auto object-cover w-full h-[400px] cursor-pointer transition-transform duration-300 ${isImageZoomed ? 'scale-110' : ''}`}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.5 }}
+              onClick={() => setIsImageZoomed(!isImageZoomed)}
             />
           </AnimatePresence>
+          <motion.div 
+            className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300"
+            initial={{ opacity: 0 }}
+            whileHover={{ opacity: 1 }}
+          >
+            <p className="text-white text-lg">Click to zoom</p>
+          </motion.div>
           <Button 
             className="absolute top-1/2 left-4 transform -translate-y-1/2 bg-white/50 hover:bg-white/75"
-            onClick={() => setCurrentImageIndex((prevIndex) => (prevIndex - 1 + catImages.length) % catImages.length)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setCurrentImageIndex((prevIndex) => (prevIndex - 1 + catImages.length) % catImages.length);
+            }}
           >
             <ChevronLeft className="h-6 w-6" />
           </Button>
           <Button 
             className="absolute top-1/2 right-4 transform -translate-y-1/2 bg-white/50 hover:bg-white/75"
-            onClick={() => setCurrentImageIndex((prevIndex) => (prevIndex + 1) % catImages.length)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setCurrentImageIndex((prevIndex) => (prevIndex + 1) % catImages.length);
+            }}
           >
             <ChevronRight className="h-6 w-6" />
           </Button>
@@ -111,7 +128,7 @@ const Index = () => {
                       transition={{ duration: 0.5, delay: index * 0.1 }}
                       className="mb-2 flex items-center"
                     >
-                      <Cat className="mr-2 text-purple-600" size={16} />
+                      <Paw className="mr-2 text-purple-600" size={16} />
                       {item}
                     </motion.li>
                   ))}
@@ -130,11 +147,11 @@ const Index = () => {
               <CardContent>
                 <ul className="list-none pl-6">
                   {[
-                    { breed: "Siamese", description: "Known for their distinctive coloring and vocal nature" },
-                    { breed: "Maine Coon", description: "Large, fluffy cats with tufted ears" },
-                    { breed: "Persian", description: "Recognizable by their flat faces and long, luxurious coats" },
-                    { breed: "Bengal", description: "Wild-looking cats with leopard-like spots" },
-                    { breed: "Scottish Fold", description: "Characterized by their folded ears" }
+                    { breed: "Siamese", description: "Known for their distinctive coloring and vocal nature", origin: "Thailand" },
+                    { breed: "Maine Coon", description: "Large, fluffy cats with tufted ears", origin: "United States" },
+                    { breed: "Persian", description: "Recognizable by their flat faces and long, luxurious coats", origin: "Iran" },
+                    { breed: "Bengal", description: "Wild-looking cats with leopard-like spots", origin: "United States" },
+                    { breed: "Scottish Fold", description: "Characterized by their folded ears", origin: "Scotland" }
                   ].map((item, index) => (
                     <motion.li 
                       key={index}
@@ -143,7 +160,9 @@ const Index = () => {
                       transition={{ duration: 0.5, delay: index * 0.1 }}
                       className="mb-4"
                     >
-                      <strong className="text-purple-700">{item.breed}:</strong> {item.description}
+                      <strong className="text-purple-700">{item.breed}</strong>
+                      <Badge variant="outline" className="ml-2">{item.origin}</Badge>
+                      <p className="mt-1">{item.description}</p>
                     </motion.li>
                   ))}
                 </ul>
@@ -169,36 +188,59 @@ const Index = () => {
                 <h3 className="text-lg font-semibold mb-4">{quizQuestions[currentQuestionIndex].question}</h3>
                 <div className="grid grid-cols-2 gap-4">
                   {quizQuestions[currentQuestionIndex].options.map((option, index) => (
-                    <Button
+                    <motion.div
                       key={index}
-                      onClick={() => handleAnswer(option)}
-                      className={`${
-                        selectedAnswer === option
-                          ? option === quizQuestions[currentQuestionIndex].correct
-                            ? "bg-green-500"
-                            : "bg-red-500"
-                          : ""
-                      }`}
-                      disabled={selectedAnswer !== null}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
                     >
-                      {option}
-                    </Button>
+                      <Button
+                        onClick={() => handleAnswer(option)}
+                        className={`w-full ${
+                          selectedAnswer === option
+                            ? option === quizQuestions[currentQuestionIndex].correct
+                              ? "bg-green-500"
+                              : "bg-red-500"
+                            : ""
+                        }`}
+                        disabled={selectedAnswer !== null}
+                      >
+                        {option}
+                      </Button>
+                    </motion.div>
                   ))}
                 </div>
                 <Progress className="mt-4" value={(currentQuestionIndex + 1) / quizQuestions.length * 100} />
-                {!quizStarted && <p className="mt-4 text-center">Your score: {score}/{quizQuestions.length}</p>}
+                {!quizStarted && (
+                  <motion.p 
+                    className="mt-4 text-center"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    Your score: {score}/{quizQuestions.length}
+                  </motion.p>
+                )}
               </div>
             )}
           </CardContent>
         </Card>
 
         <div className="text-center">
-          <Button 
-            onClick={() => setLikes(likes + 1)}
-            className="bg-pink-500 hover:bg-pink-600 transform transition-transform duration-200 hover:scale-105"
-          >
-            <Heart className="mr-2" /> Like Cats ({likes})
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  onClick={() => setLikes(likes + 1)}
+                  className="bg-pink-500 hover:bg-pink-600 transform transition-transform duration-200 hover:scale-105"
+                >
+                  <Heart className="mr-2" /> Like Cats ({likes})
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Show your love for cats!</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
     </div>
