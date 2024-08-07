@@ -3,10 +3,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Cat, Heart, Info, ChevronLeft, ChevronRight, Paw } from "lucide-react";
+import { Cat, Heart, Info, ChevronLeft, ChevronRight, Paw, Star, Gift } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useToast } from "@/components/ui/use-toast";
 
 const catImages = [
   "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Cat03.jpg/1200px-Cat03.jpg",
@@ -29,6 +31,9 @@ const Index = () => {
   const [score, setScore] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [isImageZoomed, setIsImageZoomed] = useState(false);
+  const [catFact, setCatFact] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -36,6 +41,23 @@ const Index = () => {
     }, 5000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    fetchCatFact();
+  }, []);
+
+  const fetchCatFact = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('https://catfact.ninja/fact');
+      const data = await response.json();
+      setCatFact(data.fact);
+    } catch (error) {
+      console.error('Error fetching cat fact:', error);
+      setCatFact("Oops! Couldn't fetch a cat fact right now.");
+    }
+    setIsLoading(false);
+  };
 
   const handleAnswer = (answer) => {
     setSelectedAnswer(answer);
@@ -63,6 +85,18 @@ const Index = () => {
         >
           Purrfect Cat World
         </motion.h1>
+
+        <Alert className="mb-6">
+          <Star className="h-4 w-4" />
+          <AlertTitle>Did you know?</AlertTitle>
+          <AlertDescription>
+            {isLoading ? (
+              <span className="animate-pulse">Loading cat fact...</span>
+            ) : (
+              catFact
+            )}
+          </AlertDescription>
+        </Alert>
         
         <div className="relative mb-8 overflow-hidden rounded-lg shadow-lg">
           <AnimatePresence mode="wait">
@@ -225,12 +259,19 @@ const Index = () => {
           </CardContent>
         </Card>
 
-        <div className="text-center">
+        <div className="text-center space-x-4">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button 
-                  onClick={() => setLikes(likes + 1)}
+                  onClick={() => {
+                    setLikes(likes + 1);
+                    toast({
+                      title: "Meow!",
+                      description: "Thanks for showing your love!",
+                      duration: 2000,
+                    });
+                  }}
                   className="bg-pink-500 hover:bg-pink-600 transform transition-transform duration-200 hover:scale-105"
                 >
                   <Heart className="mr-2" /> Like Cats ({likes})
@@ -241,6 +282,13 @@ const Index = () => {
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
+          
+          <Button
+            onClick={fetchCatFact}
+            className="bg-purple-500 hover:bg-purple-600 transform transition-transform duration-200 hover:scale-105"
+          >
+            <Gift className="mr-2" /> New Cat Fact
+          </Button>
         </div>
       </div>
     </div>
